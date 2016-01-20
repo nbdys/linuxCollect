@@ -5,3 +5,4 @@ Goal was to collect systeminfo from multiple hosts over ssh and write the output
 But could also take a list of any commands that will be executed on the the remote hosts.
 The actual command list is just for testing purposes.
 
+This is my first contact with python, if anyone have some tipps i would be thankful.

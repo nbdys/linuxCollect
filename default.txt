@@ -1,0 +1,45 @@
+hostname
+date
+uname -a
+cat /etc/lsb-release
+who | tail -500
+whoami
+id
+umask
+ifconfig -a
+route -n
+route
+netstat -pan
+netstat -Aan
+lsof -i
+iptables -L
+ls -l /etc/passwd
+cat /etc/passwd
+lastlog
+ls -l /etc/shadow
+cat /etc/shadow
+find /proc/sys -type f | xargs head
+echo "----- RHEL 7 VORGABEN -----"
+stat -c "%n %a" /etc/passwd
+grep umask /etc/sysconfig/init
+grep PROMPT /etc/sysconfig/init
+grep "hard core" /etc/security/limits.conf
+cat /etc/securetty
+grep minlen /etc/security/pwquality.conf
+grep minclass /etc/security/pwquality.conf
+cat /etc/pam.d/su
+cat /etc/pam.d/passwd
+cat /etc/login.defs
+cat /etc/sysctl.conf
+cat /etc/pam.d/system-auth
+cat /etc/issue
+cat /etc/issue.net
+cat /files/etc_issue
+cat /etc/selinux/config
+cat /etc/ssh_config
+cat /etc/sshd_config
+find / -perm -1000 ! -fstype nfs -exec ls -ld {}"\\"
+ps -ef
+ps -faux
+lsof -l
+rpcinfo -p

@@ -11,15 +11,17 @@ rechner = []
 commands = []
 
 def readCommands(c):
+   # print c  # just for debug
     datei = open(str(c), 'rt')
     for line in datei:
         commands.append(line.strip())
     datei.close()
+    # print commands  # debug 2
 
 def readTarget(t):
     for target in t:
         rechner.append(target)
-    print t
+    #print t
 
 ## ToDo: Abfangen, wenn die letzte Zeile der Liste ein Enter am Ende hat
 def readHostlist(h):
@@ -36,7 +38,7 @@ parser = argparse.ArgumentParser(description='Sammelt Informationen von Linuxsys
 parser.add_argument('-d', '--datei', dest='hostlist', action="store", help='Pfad zur Hostliste, Format: user@host:Port')
 parser.add_argument('-t', '--target', dest='target', action="store",
                     help='user@hostname:Port oder user@IP:Port, mehrere moeglich', nargs='*')
-parser.add_argument('-c', '--commands', dest='commands', action='store', default='default.txt', )
+parser.add_argument('-c', '--commands', dest='commandl', action='store')
 parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.9beta')
 
 args = parser.parse_args()
@@ -47,8 +49,11 @@ if (args.target):
     readTarget(argsdict['target'])
 
 # Hostliste aus Datei befüllen
-elif (args.hostlist):
+if(args.hostlist):
     readHostlist(argsdict['hostlist'])
+
+if (args.commandl):
+	readCommands(argsdict['commandl'])
 
 # Wenn keine Argumente übergeben werden die Hilfe aufrufen
 else:
@@ -90,6 +95,7 @@ if (args.target) or (args.hostlist):
         for b in commands:
             try:
                 result = sudo(b)
+		# print b
                 if result.return_code != 0:
                     continue
                 else:

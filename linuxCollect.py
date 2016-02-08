@@ -10,20 +10,24 @@ rechner = []
 # Liste der Befehle
 commands = []
 
+
+# noinspection PyPep8Naming
 def readCommands(c):
-   # print c  # just for debug
     datei = open(str(c), 'rt')
     for line in datei:
         commands.append(line.strip())
-    datei.close()
-    # print commands  # debug 2
+        datei.close()
 
+
+# noinspection PyPep8Naming
 def readTarget(t):
     for target in t:
         rechner.append(target)
-    #print t
 
-## ToDo: Abfangen, wenn die letzte Zeile der Liste ein Enter am Ende hat
+
+# ToDo: Abfangen, wenn die letzte Zeile der Liste ein Enter am Ende hat
+
+# noinspection PyPep8Naming
 def readHostlist(h):
     datei = open(str(h), 'rt')
     for line in datei:
@@ -32,13 +36,16 @@ def readHostlist(h):
 
 
 # Parser für Argumente erstellen
-parser = argparse.ArgumentParser(description='Sammelt Informationen von Linuxsystemen per SSH',
-                                 epilog="So zerbroeselt der Keks nunmal...", prog='Linux Collector')
-
-parser.add_argument('-d', '--datei', dest='hostlist', action="store", help='Pfad zur Hostliste, Format: user@host:Port')
-parser.add_argument('-t', '--target', dest='target', action="store",
+parser = argparse.ArgumentParser(description='remote command exec via SSH', epilog="So zerbroeselt der Keks nunmal...",
+                                 prog='Linux Collector')
+parser.add_argument('-h', '--host', dest='target', action="store",
                     help='user@hostname:Port oder user@IP:Port, mehrere moeglich', nargs='*')
-parser.add_argument('-c', '--commands', dest='commandl', action='store')
+parser.add_argument('-H', '--hostlist', dest='hostlist', action="store",
+                    help='Pfad zur Hostliste, Format: user@host:Port')
+parser.add_argument('-c', '--command', dest='command', action='store')
+parser.add_argument('-C', '--commandlist', dest='commandl', action='store')
+parser.add_argument('-a', '--aktComp', dest='ak', action='store')
+
 parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.9beta')
 
 args = parser.parse_args()
@@ -49,11 +56,14 @@ if (args.target):
     readTarget(argsdict['target'])
 
 # Hostliste aus Datei befüllen
-if(args.hostlist):
+if (args.hostlist):
     readHostlist(argsdict['hostlist'])
 
 if (args.commandl):
-	readCommands(argsdict['commandl'])
+    readCommands(argsdict['commandl'])
+
+if (args.command):
+    readCommands(argsdict['command'])
 
 # Wenn keine Argumente übergeben werden die Hilfe aufrufen
 else:
@@ -83,26 +93,38 @@ writeFabfile(hosts,commands)
 
 # Befehle für jeden Host abarbeiten und Ausgaben in .html Datei schreiben
 if (args.target) or (args.hostlist):
-    print rechner
     for h in rechner:
         env.host_string = h  # Host zu dem die Verbindung aufgebaut wird
         env.warn_only = True  # Nur Warnungen zeigen, nicht das Programm abbrechen
         env.skip_bad_hosts = True  # Hosts überspringen, welche nicht erreichbar sind
         env.timeout = '60'
-        print h
-        log = open(h + '.html', 'a')  # Logdatei erstellen und oeffnen
-        log.write(' <!-- HTML 4.x --> <meta http-equiv="content-type" content="text/html; charset=utf-8"> <!-- HTML5 --> <meta charset="utf-8">')
+        if (args.ak):
+            log = open(h + '.txt', 'a')  # Logdatei für AK als .txt erstellen und oeffnen
+        else:
+            log = open(h + '.html', 'a')  # Logdatei als .html erstellen und oeffnen
+            log.write(' <!-- HTML 4.x --> <meta http-equiv="content-type" content="text/html; '
+                      'charset=utf-8"> <!-- HTML5 --> <meta charset="utf-8">')
         for b in commands:
             try:
-                result = sudo(b)
-		# print b
-                if result.return_code != 0:
-                    continue
+                if (args.ak):
+                    result = run(b)
+                    if result.return_code != 0:
+                        continue
+                    else:
+                        text = result
+                        log.write(b + '\n')
+                        log.write(text.strip('\n'))
+                        log.write('\n\n')
                 else:
-                    text = "<pre>" +result + "</pre>"
-                    log.write("<h3>" + b + "</h3>" + '\n')
-                    log.write(text.strip('\n'))
-                    log.write('\n\n')
+                    result = sudo(b)
+                    # print b
+                    if result.return_code != 0:
+                        continue
+                    else:
+                        text = "<pre>" + result + "</pre>"
+                        log.write("<h3>" + b + "</h3>" + '\n')
+                        log.write(text.strip('\n'))
+                        log.write('\n\n')
             except NetworkError as e:  # SSH Connection Refused abfangen
                 print e
                 break

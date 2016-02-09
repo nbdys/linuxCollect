@@ -36,17 +36,18 @@ def readHostlist(h):
 
 
 # Parser für Argumente erstellen
-parser = argparse.ArgumentParser(description='remote command exec via SSH', epilog="So zerbroeselt der Keks nunmal...",
-                                 prog='Linux Collector')
-parser.add_argument('-h', '--host', dest='target', action="store",
+parser = argparse.ArgumentParser(
+    description='remote command exec via SSH', epilog="So zerbroeselt der Keks nunmal...", prog='Linux Collector')
+parser.add_argument('-t', '--target', dest='target', action="store",
                     help='user@hostname:Port oder user@IP:Port, mehrere moeglich', nargs='*')
-parser.add_argument('-H', '--hostlist', dest='hostlist', action="store",
+parser.add_argument('-T', '--targetlist', dest='hostlist', action="store",
                     help='Pfad zur Hostliste, Format: user@host:Port')
 parser.add_argument('-c', '--command', dest='command', action='store')
 parser.add_argument('-C', '--commandlist', dest='commandl', action='store')
 parser.add_argument('-a', '--aktComp', dest='ak', action='store')
 
-parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.9beta')
+parser.add_argument(
+    '-v', '--version', action='version', version='%(prog)s 0.9beta')
 
 args = parser.parse_args()
 argsdict = vars(args)
@@ -95,13 +96,17 @@ writeFabfile(hosts,commands)
 if (args.target) or (args.hostlist):
     for h in rechner:
         env.host_string = h  # Host zu dem die Verbindung aufgebaut wird
-        env.warn_only = True  # Nur Warnungen zeigen, nicht das Programm abbrechen
-        env.skip_bad_hosts = True  # Hosts überspringen, welche nicht erreichbar sind
+        # Nur Warnungen zeigen, nicht das Programm abbrechen
+        env.warn_only = True
+        # Hosts überspringen, welche nicht erreichbar sind
+        env.skip_bad_hosts = True
         env.timeout = '60'
         if (args.ak):
-            log = open(h + '.txt', 'a')  # Logdatei für AK als .txt erstellen und oeffnen
+            # Logdatei für AK als .txt erstellen und oeffnen
+            log = open(h + '.txt', 'a')
         else:
-            log = open(h + '.html', 'a')  # Logdatei als .html erstellen und oeffnen
+            # Logdatei als .html erstellen und oeffnen
+            log = open(h + '.html', 'a')
             log.write(' <!-- HTML 4.x --> <meta http-equiv="content-type" content="text/html; '
                       'charset=utf-8"> <!-- HTML5 --> <meta charset="utf-8">')
         for b in commands:
@@ -128,7 +133,6 @@ if (args.target) or (args.hostlist):
             except NetworkError as e:  # SSH Connection Refused abfangen
                 print e
                 break
-
         log.close()
 
 exit()

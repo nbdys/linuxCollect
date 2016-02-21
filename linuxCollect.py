@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import argparse
@@ -134,5 +135,4 @@ if (args.target) or (args.hostlist):
                 print e
                 break
         log.close()
-
 exit()

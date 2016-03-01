@@ -36,17 +36,19 @@ def readHostlist(h):
         rechner.append(line.rstrip())
     datei.close()
 
+
 def createFile(h):
     log = open(h + '.html', 'a')
     log.write(' <!-- HTML 4.x --> <meta http-equiv="content-type" content="text/html; ''charset=utf-8"> <!-- HTML5 --> <meta charset="utf-8">')
-    log.write('<h1>'+h+'</h1>')
-    log.write('<ul>') 
-    i=1 
+    log.write('<h1>' + h + '</h1>')
+    log.write('<ul>')
+    i = 1
     for b in commands:
         log.write('<li><a href="#' + str(i) + ' ">' + b + '</a></li>')
-        i=i+1
-    log.write('</ul>') 
+        i = i + 1
+    log.write('</ul>')
     log.close
+
 
 def writeLog(name, header, content):
     log = open(name, 'a')
@@ -84,8 +86,9 @@ if (args.hostlist):
 if (args.commandl):
     readCommands(argsdict['commandl'])
 
-#if (args.command):
-#    readCommands(argsdict['command'])
+
+if (args.command):
+    readCommands(argsdict['command'])
 
 # Wenn keine Argumente übergeben werden die Hilfe aufrufen
 else:
@@ -102,17 +105,16 @@ if (args.hostlist) or (args.target):
         # Hosts überspringen, welche nicht erreichbar sind
         env.skip_bad_hosts = True
         env.timeout = '60'
-       
         # Logdatei als .html-Datei erstellen
         createFile(h)
- 
-        i=0
+
+        i = 0
         for b in commands:
-            i=i+1
+            i = i + 1
             try:
                 result = sudo(b)
-                
-                if result.return_code != 0: # Error nicht loggen
+
+                if result.return_code != 0:  # Error nicht loggen
                     continue
 
                 else:
@@ -121,10 +123,8 @@ if (args.hostlist) or (args.target):
                     content = (content.strip('\n'))
                     dateiName = h + ".html"
                     writeLog(dateiName, header, content)
-                        
 
             except NetworkError as e:  # SSH Connection Refused abfangen
                 print e
                 break
-            
 exit()

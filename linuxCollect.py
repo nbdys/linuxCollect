@@ -1,18 +1,43 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import argparse
 from fabric.api import *
 from fabric.exceptions import NetworkError
+import sys
+from signal import signal, SIGPIPE, SIG_DFL
+signal(SIGPIPE,SIG_DFL)
 
-# Liste der SSH-Hosts initialisieren
-rechner = []
-# ToDo: Mit Schalter aufteilen nach Grundbefehlen und erweiterteten Befehlen
-# Liste der Befehle
-commands = []
+#########################################################################
+# Program: <APPLICATION DESCRIPTION HERE>
+#########################################################################
+#########################################################################
+# Copyright: <COPYRIGHT NOTICE HERE>
+#########################################################################
+__version__ =   "0.9.4" # <release>.<major change>.<minor change>
+__prog__ =      "<LinuxCollector>"
+__author__ =    "<ssc>"
 
+#########################################################################
+## Pipeline:
+## TODO: 
+#########################################################################
 
-# noinspection PyPep8Naming
+#########################################################################
+# XXX: Configuration
+#########################################################################
+
+EXIT_CODES = {
+	"ok"	  : 0,
+	"generic" : 1,
+	"invalid" : 3,
+	"missing" : 5,
+	"limit"   : 7,
+}
+
+#########################################################################
+# XXX: Helpers
+#########################################################################
+
 def readCommands(c):
     print c
     datei = open(str(c), 'rt')
@@ -26,9 +51,12 @@ def readTarget(t):
     for target in t:
         rechner.append(target)
 
+def readCommand(c):
+    for command in c:
+        commands.append(command)
+
 
 # ToDo: Abfangen, wenn die letzte Zeile der Liste ein Enter am Ende hat
-
 # noinspection PyPep8Naming
 def readHostlist(h):
     datei = open(str(h), 'rt')
@@ -38,6 +66,9 @@ def readHostlist(h):
 
 
 def createFile(h):
+    helper=h.split('@')
+    h=helper[1]
+    print h
     log = open(h + '.html', 'a')
     log.write('<!doctype html>\n<html lang="de-de">')
     log.write('<head>\n<meta charset="UTF-8">\n<meta name="author" content="CERTBw">\n<meta name="author" content="CERTBw">')
@@ -70,94 +101,123 @@ def createFile(h):
 
 
 def writeLog(name, header, content):
+    helper=name.split('@')
+    name=helper[1]
+    print name
     log = open(name, 'a')
     log.write(header)
     log.write(content)
     log.write('\n\n')
     log.close
 
+#########################################################################
+# XXX: Kick off
+#########################################################################
 
-# Parser für Argumente erstellen
-parser = argparse.ArgumentParser(
-    description='remote command exec via SSH', epilog="So zerbroeselt der Keks nunmal...", prog='Linux Collector')
-parser.add_argument('-t', '--target', dest='target', action="store",
-                    help='user@hostname:Port oder user@IP:Port, mehrere moeglich', nargs='*')
-parser.add_argument('-T', '--targetlist', dest='hostlist', action="store",
-                    help='Pfad zur Hostliste, Format: user@host:Port')
-parser.add_argument('-c', '--command', dest='command', action='store')
-parser.add_argument('-C', '--commandlist', dest='commandl', action='store')
-parser.add_argument('-a', '--aktComp', dest='ak', action='store')
+def run():
+    # <START CODING HERE>
+    if (args.hostlist) or (args.target):
+        for h in rechner:
+            print h
+            env.host_string = h  # Host zu dem die Verbindung aufgebaut wird
+            # Nur Warnungen zeigen, nicht das Programm abbrechen
+            env.warn_only = True
+            # Hosts überspringen, welche nicht erreichbar sind
+            env.skip_bad_hosts = True
+            env.timeout = '60'
+            # Logdatei als .html-Datei erstellen
+            createFile(h)
 
-parser.add_argument(
-    '-v', '--version', action='version', version='%(prog)s 0.9beta')
+            i = 0
+            for b in commands:
+                i = i + 1
+                try:
+                    result = sudo(b)
 
-args = parser.parse_args()
-argsdict = vars(args)
+                    if result.return_code != 0:  # Error nicht loggen
+                        header = '<h3 class="flip"  id="' + str(i) + '">' + b + '</h3>' + '\n'
+                        content = '<div id="panel' + str(i) + '"> \n'
+                        content = content +'<pre class="warning">Befehl konnte nicht ausgef&uuml;hrt werden</pre> \n'
+                        content = content +'<a href="#" class="oben">nach oben</a>\n </div>\n \n'
+                        dateiName = h + ".html"
+                        writeLog(dateiName, header,content)
+                        #ToDo: writeLog dateiname +log
+                        continue
 
-# Hostliste mit einzelnem Ziel befüllen
-if (args.target):
-    readTarget(argsdict['target'])
+                    else:
+                        header = '<h3 class="flip" id="' + str(i) + '">' + b + '</h3>' + '\n'
+                        content  = '<div id="panel' + str(i) + '"> \n'
+                        content = content +"<pre>" + result + "</pre>"
+                        content = content + '<a href="#" class="oben">nach oben</a>\n </div>\n \n'
+                        #content = (content.strip('\n'))
+                        dateiName = h + ".html"
+                        writeLog(dateiName, header, content)
+                        print b
 
-# Hostliste aus Datei befüllen
-if (args.hostlist):
-    readHostlist(argsdict['hostlist'])
+                except NetworkError as e:  # SSH Connection Refused abfangen
+                    print e
+                    break
+        
+        datName=h + ".html"
+        head= " "
+        cont= '</div></body></html>'
+        writeLog(datName, head, cont)
 
-if (args.commandl):
-    readCommands(argsdict['commandl'])
+    pass
+
+#########################################################################
+# XXX: Initialisation
+#########################################################################
+
+if __name__ == "__main__":
+
+    # Liste der SSH-Hosts initialisieren
+    rechner = []
+    # ToDo: Mit Schalter aufteilen nach Grundbefehlen und erweiterteten Befehlen
+#    Liste der Befehle
+    commands = []
+
+    # Parser für Argumente erstellen
+    parser = argparse.ArgumentParser(
+        description='remote command exec via SSH', epilog="So zerbroeselt der Keks nunmal...", prog='Linux Collector')
+    parser.add_argument('-t', '--target', dest='target', action="store",
+                        help='user@hostname:Port oder user@IP:Port, mehrere moeglich', nargs='*')
+    parser.add_argument('-T', '--targetlist', dest='hostlist', action="store",
+                        help='Pfad zur Hostliste, Format: user@host:Port')
+    parser.add_argument('-c', '--command', dest='command', action='store', nargs='*')
+    parser.add_argument('-C', '--commandlist', dest='commandl', action='store')
+
+    parser.add_argument(
+        '-v', '--version', action='version', version='%(prog)s 0.9beta')
 
 
-#if (args.command):
-#    readCommands(argsdict['command'])
+    try:
+        args = parser.parse_args()
+    except:
+        #parser.print_help()
+        sys.exit(0)
 
-# Wenn keine Argumente übergeben werden die Hilfe aufrufen
-else:
-    parser.parse_args(['--help'])
+    argsdict = vars(args)
+
+    # Hostliste mit einzelnem Ziel befüllen
+    if (args.target):
+        readTarget(argsdict['target'])
+
+    # Hostliste aus Datei befüllen
+    if (args.hostlist):
+        readHostlist(argsdict['hostlist'])
+
+    if (args.commandl):
+        readCommands(argsdict['commandl'])
 
 
-# Befehle für jeden Host abarbeiten und Ausgaben in .html Datei schreiben
-if (args.hostlist) or (args.target):
-    for h in rechner:
-        print h
-        env.host_string = h  # Host zu dem die Verbindung aufgebaut wird
-        # Nur Warnungen zeigen, nicht das Programm abbrechen
-        env.warn_only = True
-        # Hosts überspringen, welche nicht erreichbar sind
-        env.skip_bad_hosts = True
-        env.timeout = '60'
-        # Logdatei als .html-Datei erstellen
-        createFile(h)
+    if (args.command):
+        readCommand(argsdict['command'])	
 
-        i = 0
-        for b in commands:
-            i = i + 1
-            try:
-                result = sudo(b)
 
-                if result.return_code != 0:  # Error nicht loggen
-                    header = '<h3 class="flip"  id="' + str(i) + '">' + b + '</h3>' + '\n'
-                    content = '<div id="panel' + str(i) + '"> \n'
-                    content = content +'<pre class="warning">Befehl konnte nicht ausgef&uuml;hrt werden</pre> \n'
-                    content = content +'<a href="#" class="oben">nach oben</a>\n </div>\n \n'
-                    dateiName = h + ".html"
-                    writeLog(dateiName, header,content)
-                    #ToDo: writeLog dateiname +log
-                    continue
-
-                else:
-                    header = '<h3 class="flip" id="' + str(i) + '">' + b + '</h3>' + '\n'
-                    content  = '<div id="panel' + str(i) + '"> \n'
-                    content = content +"<pre>" + result + "</pre>"
-                    content = content + '<a href="#" class="oben">nach oben</a>\n </div>\n \n'
-                    #content = (content.strip('\n'))
-                    dateiName = h + ".html"
-                    writeLog(dateiName, header, content)
-
-            except NetworkError as e:  # SSH Connection Refused abfangen
-                print e
-                break
-    
-    datName=h + ".html"
-    head= " "
-    cont= '</div></body></html>'
-    writeLog(datName, head, cont)
-exit()
+	try:
+		run()
+        
+	except KeyboardInterrupt:
+		print "\n\nCancelled."
+		sys.exit(0)

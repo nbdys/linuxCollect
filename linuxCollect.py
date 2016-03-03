@@ -179,16 +179,16 @@ if __name__ == "__main__":
 
     # Parser für Argumente erstellen
     parser = argparse.ArgumentParser(
-        description='remote command exec via SSH', epilog="So zerbroeselt der Keks nunmal...", prog='Linux Collector')
+        description='remote command exec via SSH',
+        version="%s: v%s (%s)" % (__prog__, __version__, __author__),
+        epilog="So zerbroeselt der Keks nunmal...",
+        prog='Linux Collector')
     parser.add_argument('-t', '--target', dest='target', action="store",
                         help='user@hostname:Port oder user@IP:Port, mehrere moeglich', nargs='*')
     parser.add_argument('-T', '--targetlist', dest='hostlist', action="store",
                         help='Pfad zur Hostliste, Format: user@host:Port')
     parser.add_argument('-c', '--command', dest='command', action='store', nargs='*')
     parser.add_argument('-C', '--commandlist', dest='commandl', action='store')
-
-    parser.add_argument(
-        '-v', '--version', action='version', version='%(prog)s 0.9beta')
 
 
     try:
@@ -217,7 +217,7 @@ if __name__ == "__main__":
 
 	try:
 		run()
-        
+
 	except KeyboardInterrupt:
 		print "\n\nCancelled."
 		sys.exit(0)
